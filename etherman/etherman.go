@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevmbridge"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"

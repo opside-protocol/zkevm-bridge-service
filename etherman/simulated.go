@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/matic"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/mockverifier"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevmbridge"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/smartcontracts/polygonzkevmglobalexitroot"
 	mockbridge "github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/matic"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/mockverifier"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +60,7 @@ func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (etherman *Client
 	if err != nil {
 		return nil, nil, common.Address{}, nil, err
 	}
-	polygonZkEVMAddress, _, polygonZkEVMContract, err := polygonzkevm.DeployPolygonzkevm(auth, client, exitManagerAddr, maticAddr, rollupVerifierAddr, bridgeAddr, 1000, 1) //nolint
+	polygonZkEVMAddress, _, polygonZkEVMContract, err := polygonzkevm.DeployPolygonzkevm(auth, client, exitManagerAddr, rollupVerifierAddr, bridgeAddr, 1000, 1) //nolint
 	if err != nil {
 		return nil, nil, common.Address{}, nil, err
 	}
