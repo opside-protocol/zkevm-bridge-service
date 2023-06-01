@@ -782,6 +782,12 @@ func (s *ClientSynchronizer) processTrustedVerifyBatch(verifiedBatch etherman.Ve
 		}
 		return err
 	}
+
+	if verifiedBatch.BatchNumber <= lastVBatch.BatchNumber {
+		log.Debugf("resend commit proof data. lastVBatch: %v, verifiedBatch: %v", lastVBatch, verifiedBatch)
+		return nil
+	}
+
 	nbatches := verifiedBatch.BatchNumber - lastVBatch.BatchNumber
 	var i uint64
 	for i = 1; i <= nbatches; i++ {
