@@ -379,6 +379,7 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 				continue
 			}
 
+			mTxLog.Debugf("history %v for mTx", mTx.History)
 			// check if the tx is already in the network, if not, send it
 			_, _, err = tm.l2Node.TransactionByHash(ctx, signedTx.Hash())
 			if errors.Is(err, ethereum.NotFound) {
