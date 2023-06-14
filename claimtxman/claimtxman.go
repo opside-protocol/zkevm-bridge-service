@@ -229,13 +229,13 @@ func (tm *ClaimTxManager) addClaimTx(id uint, blockID uint64, from common.Addres
 
 // monitorTxs process all pending monitored tx
 func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
-	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
-	if err != nil {
-		return err
-	}
+	// dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
+	// if err != nil {
+	// 	return err
+	// }
 
 	statusesFilter := []ctmtypes.MonitoredTxStatus{ctmtypes.MonitoredTxStatusCreated}
-	mTxs, err := tm.storage.GetClaimTxsByStatus(ctx, statusesFilter, dbTx)
+	mTxs, err := tm.storage.GetClaimTxsByStatus(ctx, statusesFilter, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get created monitored txs: %v", err)
 	}
@@ -294,14 +294,14 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 					BlockHash:   block.Hash(),
 					ParentHash:  block.ParentHash(),
 					ReceivedAt:  block.ReceivedAt,
-				}, dbTx)
+				}, nil)
 				if err != nil {
 					mTxLog.Errorf("failed to add receipt block: %v", err)
 					continue
 				}
 				mTx.Status = ctmtypes.MonitoredTxStatusConfirmed
 				// update monitored tx changes into storage
-				err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+				err = tm.storage.UpdateClaimTx(ctx, mTx, nil)
 				if err != nil {
 					mTxLog.Errorf("failed to update monitored tx when confirmed: %v", err)
 				}
@@ -326,7 +326,7 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 			mTx.Status = ctmtypes.MonitoredTxStatusFailed
 			mTxLog.Infof("marked as failed because reached the history size limit (%d)", maxHistorySize)
 			// update monitored tx changes into storage
-			err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+			err = tm.storage.UpdateClaimTx(ctx, mTx, nil)
 			if err != nil {
 				mTxLog.Errorf("failed to update monitored tx when max history size limit reached: %v", err)
 			}
@@ -424,7 +424,7 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 			}
 
 			// update monitored tx changes into storage
-			err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+			err = tm.storage.UpdateClaimTx(ctx, mTx, nil)
 			if err != nil {
 				mTxLog.Errorf("failed to update monitored tx: %v", err)
 				continue
@@ -434,9 +434,9 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 		}
 	}
 
-	err = tm.storage.Commit(tm.ctx, dbTx)
+	err = tm.storage.Commit(tm.ctx, nil)
 	if err != nil {
-		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
+		rollbackErr := tm.storage.Rollback(tm.ctx, nil)
 		if rollbackErr != nil {
 			log.Fatalf("claimtxman error rolling back state. RollbackErr: %s, err: %s", rollbackErr.Error(), err.Error())
 		}
