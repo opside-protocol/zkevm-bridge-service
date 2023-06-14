@@ -404,8 +404,25 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 					}
 				}
 				for {
-					_, err := tm.l2Node.TransactionReceipt(ctx, signedTx.Hash())
+					receipt, err := tm.l2Node.TransactionReceipt(ctx, signedTx.Hash())
 					if err == nil {
+						block, err := tm.l2Node.BlockByNumber(ctx, receipt.BlockNumber)
+						if err != nil {
+							mTxLog.Errorf("failed to get receipt block: %v", err)
+							continue
+						}
+						mTx.BlockID, err = tm.storage.AddBlock(ctx, &etherman.Block{
+							NetworkID:   tm.l2NetworkID,
+							BlockNumber: block.Number().Uint64(),
+							BlockHash:   block.Hash(),
+							ParentHash:  block.ParentHash(),
+							ReceivedAt:  block.ReceivedAt,
+						}, nil)
+						if err != nil {
+							mTxLog.Errorf("failed to add receipt block: %v", err)
+							continue
+						}
+						mTx.Status = ctmtypes.MonitoredTxStatusConfirmed
 						break
 					}
 
