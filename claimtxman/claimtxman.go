@@ -403,20 +403,20 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 						mTxLog.Errorf("failed to review monitored tx: %v", err)
 					}
 				}
-				// for {
-				// 	_, _, err = tm.l2Node.TransactionByHash(ctx, signedTx.Hash())
-				// 	if errors.Is(err, ethereum.NotFound) {
-				// 		mTxLog.Errorf("tx %v was not found in the pending pool", signedTx.Hash().String())
-				// 		time.Sleep(2 * time.Second)
-				// 		continue
-				// 	} else if err != nil {
-				// 		mTxLog.Errorf("failed to get tx %s: %v", signedTx.Hash().String(), err)
-				// 		time.Sleep(2 * time.Second)
-				// 		continue
-				// 	}
+				for {
+					_, err := tm.l2Node.TransactionReceipt(ctx, signedTx.Hash())
+					if err == nil {
+						break
+					}
 
-				// 	break
-				// }
+					if errors.Is(err, ethereum.NotFound) {
+						mTxLog.Debug("Transaction not yet mined")
+					} else {
+						mTxLog.Debug("Receipt retrieval failed", "err", err)
+					}
+
+					time.Sleep(5 * time.Second)
+				}
 
 			} else {
 				mTxLog.Infof("signed tx %v already found in the network for the monitored tx: %v", signedTx.Hash().String(), err)
