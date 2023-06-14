@@ -433,14 +433,14 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 		}
 	}
 
-	err = tm.storage.Commit(tm.ctx, nil)
-	if err != nil {
-		rollbackErr := tm.storage.Rollback(tm.ctx, nil)
-		if rollbackErr != nil {
-			log.Fatalf("claimtxman error rolling back state. RollbackErr: %s, err: %s", rollbackErr.Error(), err.Error())
-		}
-		log.Fatalf("UpdateClaimTx committing dbTx, err: %s", err.Error())
-	}
+	// err = tm.storage.Commit(tm.ctx, nil)
+	// if err != nil {
+	// 	rollbackErr := tm.storage.Rollback(tm.ctx, nil)
+	// 	if rollbackErr != nil {
+	// 		log.Fatalf("claimtxman error rolling back state. RollbackErr: %s, err: %s", rollbackErr.Error(), err.Error())
+	// 	}
+	// 	log.Fatalf("UpdateClaimTx committing dbTx, err: %s", err.Error())
+	// }
 	return nil
 }
 
