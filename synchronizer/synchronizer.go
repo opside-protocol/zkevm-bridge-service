@@ -35,6 +35,7 @@ type ClientSynchronizer struct {
 	zkEVMClient      zkEVMClientInterface
 	synced           bool
 	l1RollupExitRoot common.Hash
+	rollBackConfig   RollBackConfig
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -73,6 +74,7 @@ func NewSynchronizer(
 			chExitRootEvent:  chExitRootEvent,
 			zkEVMClient:      zkEVMClient,
 			l1RollupExitRoot: ger.ExitRoots[1],
+			rollBackConfig:   cfg.RollBackChainMap[ethMan.GetPoEAddr()],
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -332,6 +334,12 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 					return err
 				}
 			case etherman.TrustedVerifyBatchOrder:
+				if s.rollBackConfig.Enable {
+					if _, ok := s.rollBackConfig.IgnoreTx[blocks[i].VerifiedBatches[element.Pos].TxHash.Hex()]; ok {
+						log.Infof("filter proof tx. tx_hash: %s", blocks[i].VerifiedBatches[element.Pos].TxHash.Hex())
+						continue
+					}
+				}
 				err = s.processTrustedVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
 				if err != nil {
 					return err
@@ -521,6 +529,11 @@ func (s *ClientSynchronizer) checkTrustedState(batch etherman.Batch, dbTx pgx.Tx
 
 func (s *ClientSynchronizer) processSequenceBatches(sequencedBatches []etherman.SequencedBatch, blockID, blockNumber uint64, dbTx pgx.Tx) error {
 	for _, sbatch := range sequencedBatches {
+		if s.rollBackConfig.Enable {
+			if _, ok := s.rollBackConfig.IgnoreTx[sbatch.TxHash.Hex()]; ok {
+				continue
+			}
+		}
 		log.Infof("NetworkID: %d, Processing batch: %d", s.networkID, sbatch.BatchNumber)
 		batch := etherman.Batch{
 			BatchNumber:    sbatch.BatchNumber,

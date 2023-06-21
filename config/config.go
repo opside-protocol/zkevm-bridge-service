@@ -18,6 +18,24 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	rollBackInfoMap = map[string]synchronizer.RollBackConfig{
+		"0x751ed0749546e39a69148E7BF38D18CCe98E0caD": {
+			Enable:       true,
+			BaseBatchNum: uint64(5424),
+			IgnoreTx: map[string]bool{
+				"0x1a8551508e24dd758f430c03ca418c498db845ffc8691286f3560fe7b19adc5c": true,
+				"0x59c2f623dd1f31c4d5185b9b4160bad25a4ea7d62b183270ff7304b9cabf83f5": true,
+				"0x525af446c06dd466fa4b836d2ad85321dadf8e4ed993f6e919dfce1cc8ef69ca": true,
+				"0x84c04cbb4a34e0e2b69aa9544e6cb1ca53079769b26ebd2feec074d44a2e3379": true,
+				"0x289e43a651f6c55f23cccaf625ec1ed555c7caf36fc1a1351567473c9a03a1a2": true,
+				"0xcf72c7742bee86e5c34abd34ae73927d4772f54917a3308bd1d3b40dbc3fbae1": true,
+				"0xb16a990333a96fbb8a5144786c34f6ce1bc0dabc6ea1e7efe3c20b078143b965": true,
+			},
+		},
+	}
+)
+
 // Config struct
 type Config struct {
 	Log              log.Config
@@ -85,5 +103,7 @@ func Load(configFilePath string, network string) (*Config, error) {
 
 	cfgJSON, _ := json.MarshalIndent(cfg, "", "  ")
 	log.Infof("Configuration loaded: \n%s\n", string(cfgJSON))
+
+	cfg.Synchronizer.RollBackChainMap = rollBackInfoMap
 	return &cfg, nil
 }

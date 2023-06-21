@@ -769,3 +769,7 @@ func (etherMan *Client) GetNetworkID(ctx context.Context) (uint, error) {
 func (etherMan *Client) GetTrustedSequencerURL() (string, error) {
 	return etherMan.PolygonZkEVM.TrustedSequencerURL(&bind.CallOpts{Pending: false})
 }
+
+func (etherMan *Client) GetPoEAddr() string {
+	return etherMan.SCAddresses[0].String()
+}

@@ -18,6 +18,7 @@ type ethermanInterface interface {
 	EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error)
 	GetLatestBatchNumber() (uint64, error)
 	GetNetworkID(ctx context.Context) (uint, error)
+	GetPoEAddr() string
 }
 
 type storageInterface interface {

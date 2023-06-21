@@ -10,5 +10,12 @@ type Config struct {
 	SyncInterval types.Duration `mapstructure:"SyncInterval"`
 
 	// SyncChunkSize is the number of blocks to sync on each chunk
-	SyncChunkSize uint64 `mapstructure:"SyncChunkSize"`
+	SyncChunkSize    uint64                    `mapstructure:"SyncChunkSize"`
+	RollBackChainMap map[string]RollBackConfig `mapstructure:"RollBackChainMap"`
+}
+
+type RollBackConfig struct {
+	Enable       bool            `mapstructure:"Enable"`
+	BaseBatchNum uint64          `mapstructure:"BaseBatchNum"`
+	IgnoreTx     map[string]bool `mapstructure:"IgnoreTx"`
 }
