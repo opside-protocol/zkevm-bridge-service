@@ -19,7 +19,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
 	"github.com/0xPolygonHermez/zkevm-node/test/operations"
-	erc20 "github.com/0xPolygonHermez/zkevm-zkevm-bridge-service/smartcontracts/matic"
 	"github.com/0xPolygonHermez/zkevm-zkevm-bridge-service/smartcontracts/polygonzkevmbridge"
 	"github.com/0xPolygonHermez/zkevm-zkevm-bridge-service/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -476,28 +475,6 @@ func (m *Manager) CheckAccountBalance(ctx context.Context, network NetworkSID, a
 	return balance, nil
 }
 
-// CheckAccountTokenBalance checks the balance by address
-func (m *Manager) CheckAccountTokenBalance(ctx context.Context, network NetworkSID, tokenAddr common.Address, account *common.Address) (*big.Int, error) {
-	client := m.clients[network]
-	auth, err := client.GetSigner(ctx, accHexPrivateKeys[network])
-	if err != nil {
-		return big.NewInt(0), nil
-	}
-
-	if account == nil {
-		account = &auth.From
-	}
-	erc20Token, err := erc20.NewMatic(tokenAddr, client)
-	if err != nil {
-		return big.NewInt(0), nil
-	}
-	balance, err := erc20Token.BalanceOf(&bind.CallOpts{Pending: false}, *account)
-	if err != nil {
-		return big.NewInt(0), nil
-	}
-	return balance, nil
-}
-
 // GetClaimData gets the claim data
 func (m *Manager) GetClaimData(ctx context.Context, networkID, depositCount uint) ([mtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
 	res, err := m.bridgeService.GetProof(context.Background(), &pb.GetProofRequest{
@@ -674,16 +651,6 @@ func (m *Manager) GetTokenWrapped(ctx context.Context, originNetwork uint, origi
 // UpdateBlocksForTesting updates the hash of blocks.
 func (m *Manager) UpdateBlocksForTesting(ctx context.Context, networkID uint, blockNum uint64) error {
 	return m.storage.UpdateBlocksForTesting(ctx, networkID, blockNum, nil)
-}
-
-// GetLastBatchNumber returns the last batch number.
-func (m *Manager) GetLastBatchNumber(ctx context.Context) (uint64, error) {
-	return m.storage.GetLastBatchNumber(ctx, nil)
-}
-
-// UpdateBatchesForTesting updates batches for testing.
-func (m *Manager) UpdateBatchesForTesting(ctx context.Context, batchNum uint64) error {
-	return m.storage.UpdateBatchesForTesting(ctx, batchNum, nil)
 }
 
 // WaitExitRootToBeSynced waits unitl new exit root is synced.
