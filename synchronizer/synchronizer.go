@@ -159,6 +159,8 @@ func (s *ClientSynchronizer) Sync() error {
 				if err != nil {
 					log.Errorf("networkID: %d, error getting current trusted state", s.networkID)
 				}
+
+				s.synced = false
 			}
 		}
 	}

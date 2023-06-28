@@ -551,6 +551,24 @@ func (p *PostgresStorage) GetClaimTxsByStatus(ctx context.Context, statuses []ct
 	return mTxs, nil
 }
 
+func (p *PostgresStorage) GetMaxNonce(ctx context.Context, fromAddress common.Address, dbTx pgx.Tx) (uint64, error) {
+	const getMonitoredTxsSQL = "SELECTcoalesce(max(nonce), 0) FROM sync.monitored_txs WHERE from_addr = $1 and status = $2"
+	var nonce uint64
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getMonitoredTxsSQL, fromAddress, ctmtypes.MonitoredTxStatusConfirmed).Scan(&nonce)
+	return nonce, err
+}
+
+func (p *PostgresStorage) GetCreatedClaimTxsCount(ctx context.Context, fromAddress common.Address, dbTx pgx.Tx) (uint64, error) {
+	const getMonitoredTxsSQL = "SELECT COUNT(*) FROM sync.monitored_txs WHERE from_addr = $1 and status = $2"
+	var count uint64
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getMonitoredTxsSQL, fromAddress, ctmtypes.MonitoredTxStatusCreated).Scan(&count)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, gerror.ErrStorageNotFound
+	}
+
+	return count, nil
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx pgx.Tx) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"

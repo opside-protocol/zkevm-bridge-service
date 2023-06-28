@@ -6,6 +6,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -16,6 +17,8 @@ type storageInterface interface {
 	AddClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx pgx.Tx) error
 	UpdateClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx pgx.Tx) error
 	GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, dbTx pgx.Tx) ([]types.MonitoredTx, error)
+	GetMaxNonce(ctx context.Context, fromAddress common.Address, dbTx pgx.Tx) (uint64, error)
+	GetCreatedClaimTxsCount(ctx context.Context, fromAddress common.Address, dbTx pgx.Tx) (uint64, error)
 	// atomic
 	Rollback(ctx context.Context, dbTx pgx.Tx) error
 	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)

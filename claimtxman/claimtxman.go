@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
@@ -76,6 +75,24 @@ func NewClaimTxManager(cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot
 // send then to the blockchain and keep monitoring them until they
 // get mined
 func (tm *ClaimTxManager) Start() {
+	go func() {
+		for {
+			select {
+			case <-tm.ctx.Done():
+				return
+			default:
+			}
+
+			num, err := tm.monitorTxs(context.Background())
+			if err != nil {
+				log.Errorf("failed to monitor txs: %v", err)
+			}
+
+			if num == 0 {
+				time.Sleep(tm.cfg.FrequencyToMonitorTxs.Duration)
+			}
+		}
+	}()
 	for {
 		select {
 		case <-tm.ctx.Done():
@@ -87,11 +104,11 @@ func (tm *ClaimTxManager) Start() {
 					log.Errorf("failed to update deposits status: %v", err)
 				}
 			}()
-		case <-time.After(tm.cfg.FrequencyToMonitorTxs.Duration):
-			err := tm.monitorTxs(context.Background())
-			if err != nil {
-				log.Errorf("failed to monitor txs: %v", err)
-			}
+			// case <-time.After(tm.cfg.FrequencyToMonitorTxs.Duration):
+			// 	err := tm.monitorTxs(context.Background())
+			// 	if err != nil {
+			// 		log.Errorf("failed to monitor txs: %v", err)
+			// 	}
 		}
 	}
 }
@@ -231,7 +248,7 @@ func (tm *ClaimTxManager) addClaimTx(depositCount uint, blockID uint64, from com
 }
 
 // monitorTxs process all pending monitored tx
-func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
+func (tm *ClaimTxManager) monitorTxs(ctx context.Context) (int, error) {
 	// dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	// if err != nil {
 	// 	return err
@@ -240,7 +257,7 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 	statusesFilter := []ctmtypes.MonitoredTxStatus{ctmtypes.MonitoredTxStatusCreated}
 	mTxs, err := tm.storage.GetClaimTxsByStatus(ctx, statusesFilter, nil)
 	if err != nil {
-		return fmt.Errorf("failed to get created monitored txs: %v", err)
+		return 0, fmt.Errorf("failed to get created monitored txs: %v", err)
 	}
 
 	// isResetNonce := false // it will reset the nonce in one cycle
@@ -360,6 +377,13 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 			}
 			mTx.GasPrice = gasPrice
 
+			nonce, err := tm.l2Node.NonceAt(ctx, mTx.From, nil)
+			if err != nil {
+				mTxLog.Errorf("failed to get nonce. Error: %v", err)
+				continue
+			}
+			mTx.Nonce = nonce
+
 			// rebuild transaction
 			tx := mTx.Tx()
 			mTxLog.Debugf("unsigned tx created for monitored tx")
@@ -389,12 +413,6 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 				err := tm.l2Node.SendTransaction(ctx, signedTx)
 				if err != nil {
 					mTxLog.Errorf("failed to send tx %s to network: %v", signedTx.Hash().String(), err)
-					if strings.Contains(err.Error(), "nonce") {
-						mTxLog.Infof("nonce error detected, resetting nonce cache")
-						tm.nonceCache.Remove(mTx.From.Hex())
-						mTxLog.Infof("nonce cache cleared for address %v, nonce: %d", mTx.From.Hex(), signedTx.Nonce())
-
-					}
 				} else {
 					for {
 						receipt, err := tm.l2Node.TransactionReceipt(ctx, signedTx.Hash())
@@ -451,7 +469,7 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) error {
 	// 	}
 	// 	log.Fatalf("UpdateClaimTx committing dbTx, err: %s", err.Error())
 	// }
-	return nil
+	return len(mTxs), nil
 }
 
 // ReviewMonitoredTx checks if tx needs to be updated
