@@ -219,6 +219,7 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 				ClaimTxHash:   claimTxHash,
 				Metadata:      "0x" + hex.EncodeToString(deposit.Metadata),
 				ReadyForClaim: deposit.ReadyForClaim,
+				Timestamp:     uint64(deposit.Timestamp.Unix()),
 			},
 		)
 	}
@@ -317,6 +318,7 @@ func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest)
 			ClaimTxHash:   claimTxHash,
 			Metadata:      "0x" + hex.EncodeToString(deposit.Metadata),
 			ReadyForClaim: deposit.ReadyForClaim,
+			Timestamp:     uint64(deposit.Timestamp.Unix()),
 		},
 	}, nil
 }
