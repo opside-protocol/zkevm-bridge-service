@@ -454,14 +454,14 @@ func (p *PostgresStorage) UpdateBlocksForTesting(ctx context.Context, networkID 
 	return err
 }
 
-// UpdateL1DepositsStatus updates the ready_for_claim status of L1 deposits.
-func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+// UpdateDepositsStatus updates the ready_for_claim status of L1 deposits.
+func (p *PostgresStorage) UpdateDepositsStatus(ctx context.Context, exitRoot []byte, networkID uint, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	const updateDepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true 
 		WHERE deposit_cnt <=
-			(SELECT deposit_cnt FROM mt.root WHERE root = $1 AND network = 0) 
-			AND network_id = 0 AND ready_for_claim = false
+			(SELECT deposit_cnt FROM mt.root WHERE root = $1 AND network = $2) 
+			AND network_id = $2 AND ready_for_claim = false
 			RETURNING leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim;`
-	rows, err := p.getExecQuerier(dbTx).Query(ctx, updateDepositsStatusSQL, exitRoot)
+	rows, err := p.getExecQuerier(dbTx).Query(ctx, updateDepositsStatusSQL, exitRoot, networkID)
 	if err != nil {
 		return nil, err
 	}
@@ -482,22 +482,12 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 	return deposits, nil
 }
 
-// UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
-func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, networkID uint, dbTx pgx.Tx) error {
-	const updateDepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true
-		WHERE deposit_cnt <=
-			(SELECT deposit_cnt FROM mt.root WHERE root = $1 AND network = $2)
-			AND network_id = $2 AND ready_for_claim = false;`
-	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateDepositsStatusSQL, exitRoot, networkID)
-	return err
-}
-
 // AddClaimTx adds a claim monitored transaction to the storage.
 func (p *PostgresStorage) AddClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx pgx.Tx) error {
 	const addMonitoredTxSQL = `INSERT INTO sync.monitored_txs 
-		(id, block_id, from_addr, to_addr, nonce, value, data, gas, status, history, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-	_, err := p.getExecQuerier(dbTx).Exec(ctx, addMonitoredTxSQL, mTx.ID, mTx.BlockID, mTx.From, mTx.To, mTx.Nonce, mTx.Value.String(), mTx.Data, mTx.Gas, mTx.Status, pq.Array(mTx.HistoryHashSlice()), time.Now().UTC(), time.Now().UTC())
+		(id, block_id, from_addr, to_addr, nonce, value, data, gas, status, history, created_at, updated_at, is_l1)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, addMonitoredTxSQL, mTx.ID, mTx.BlockID, mTx.From, mTx.To, mTx.Nonce, mTx.Value.String(), mTx.Data, mTx.Gas, mTx.Status, pq.Array(mTx.HistoryHashSlice()), time.Now().UTC(), time.Now().UTC(), mTx.IsL1)
 	return err
 }
 
@@ -536,7 +526,7 @@ func (p *PostgresStorage) GetClaimTxsByStatus(ctx context.Context, statuses []ct
 			history [][]byte
 		)
 		mTx := ctmtypes.MonitoredTx{}
-		err = rows.Scan(&mTx.ID, &mTx.BlockID, &mTx.From, &mTx.To, &mTx.Nonce, &value, &mTx.Data, &mTx.Gas, &mTx.Status, pq.Array(&history), &mTx.CreatedAt, &mTx.UpdatedAt)
+		err = rows.Scan(&mTx.ID, &mTx.BlockID, &mTx.From, &mTx.To, &mTx.Nonce, &value, &mTx.Data, &mTx.Gas, &mTx.Status, pq.Array(&history), &mTx.CreatedAt, &mTx.UpdatedAt, &mTx.IsL1)
 		if err != nil {
 			return mTxs, err
 		}

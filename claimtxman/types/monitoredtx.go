@@ -81,6 +81,8 @@ type MonitoredTx struct {
 
 	// UpdatedAt last date time it was updated
 	UpdatedAt time.Time
+
+	IsL1 bool
 }
 
 // Tx uses the current information to build a tx
