@@ -54,6 +54,7 @@ type Claim struct {
 	OriginalNetwork    uint
 	OriginalAddress    common.Address
 	Amount             *big.Int
+	DestinationNetwork uint
 	DestinationAddress common.Address
 	BlockID            uint64
 	BlockNumber        uint64

@@ -157,7 +157,7 @@ func (c *Client) MintERC20(ctx context.Context, erc20Addr common.Address, amount
 
 // SendBridgeAsset sends a bridge asset transaction.
 func (c *Client) SendBridgeAsset(ctx context.Context, tokenAddr common.Address, amount *big.Int, destNetwork uint32,
-	destAddr *common.Address, metadata []byte, auth *bind.TransactOpts,
+	destAddr *common.Address, auth *bind.TransactOpts,
 ) error {
 	emptyAddr := common.Address{}
 	if tokenAddr == emptyAddr {
@@ -166,7 +166,7 @@ func (c *Client) SendBridgeAsset(ctx context.Context, tokenAddr common.Address, 
 	if destAddr == nil {
 		destAddr = &auth.From
 	}
-	tx, err := c.bridge.BridgeAsset(auth, destNetwork, *destAddr, amount, tokenAddr, true, metadata)
+	tx, err := c.bridge.BridgeAsset(auth, destNetwork, *destAddr, amount, tokenAddr, true)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err

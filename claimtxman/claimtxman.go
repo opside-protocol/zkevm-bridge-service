@@ -185,6 +185,9 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 
 func (tm *ClaimTxManager) handleDeposits(deposits []*etherman.Deposit, isL1 bool, dbTx pgx.Tx) error {
 	for _, deposit := range deposits {
+		if deposit.NetworkID == 1 && deposit.DestinationNetwork == 0 {
+			continue
+		}
 		claimHash, err := tm.bridgeService.GetDepositStatus(tm.ctx, deposit.DepositCount, deposit.DestinationNetwork)
 		if err != nil {
 			log.Errorf("error getting deposit status for deposit %d. Error: %v", deposit.DepositCount, err)

@@ -25,7 +25,7 @@ var (
 
 	// Bridge events
 	depositEventSignatureHash         = crypto.Keccak256Hash([]byte("BridgeEvent(uint8,uint32,address,uint32,address,uint256,bytes,uint32)"))
-	claimEventSignatureHash           = crypto.Keccak256Hash([]byte("ClaimEvent(uint32,uint32,address,address,uint256)"))
+	claimEventSignatureHash           = crypto.Keccak256Hash([]byte("ClaimEvent(uint32,uint32,address,uint32,address,uint256)"))
 	newWrappedTokenEventSignatureHash = crypto.Keccak256Hash([]byte("NewWrappedToken(uint32,address,address,bytes)"))
 
 	// Proxy events
@@ -265,6 +265,7 @@ func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *
 	}
 	var claim Claim
 	claim.Amount = c.Amount
+	claim.DestinationNetwork = uint(c.DestinationNetwork)
 	claim.DestinationAddress = c.DestinationAddress
 	claim.Index = uint(c.Index)
 	claim.OriginalNetwork = uint(c.OriginNetwork)
