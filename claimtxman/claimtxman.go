@@ -45,6 +45,7 @@ type ClaimTxManager struct {
 	l1Auth          *bind.TransactOpts
 	l2Auth          *bind.TransactOpts
 	nonceCache      *lru.Cache[string, uint64]
+	l1NodeURL       string
 }
 
 // NewClaimTxManager creates a new claim transaction manager.
@@ -74,6 +75,7 @@ func NewClaimTxManager(cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot
 		l1Auth:          l1Auth,
 		l2Auth:          l2Auth,
 		nonceCache:      cache,
+		l1NodeURL:       l1NodeURL,
 	}, err
 }
 
@@ -89,6 +91,14 @@ func (tm *ClaimTxManager) GetNode(isL1 bool) *utils.Client {
 		return tm.l1Node
 	}
 	return tm.l2Node
+}
+
+func (tm *ClaimTxManager) GetDestinationL1Node(l1BridgeAddr common.Address) (*utils.Client, error) {
+	l1Client, err := utils.NewClient(context.Background(), tm.l1NodeURL, l1BridgeAddr)
+	if err != nil {
+		return nil, err
+	}
+	return l1Client, nil
 }
 
 // Start will start the tx management, reading txs from storage,
@@ -219,8 +229,20 @@ func (tm *ClaimTxManager) handleDeposits(deposits []*etherman.Deposit, isL1 bool
 			return err
 		}
 		value := big.NewInt(0)
-		if isL1 {
-			value = big.NewInt(1000000000000000000)
+		if isL1 && deposit.DestinationNetwork > 1 {
+			l1BridgeAddr, err := tm.GetNode(true).GetL1BridgeAddress(uint32(deposit.DestinationNetwork))
+			if err != nil {
+				return err
+			}
+			destinationL1Node, err := tm.GetDestinationL1Node(l1BridgeAddr)
+			if err != nil {
+				return err
+			}
+			fee, err := destinationL1Node.GetBridgeFee()
+			if err != nil {
+				return err
+			}
+			value = fee
 		}
 		if err = tm.addClaimTx(isL1, deposit.DepositCount, deposit.BlockID, tm.GetAuth(isL1).From, tx.To(), value, tx.Data(), dbTx); err != nil {
 			log.Error("error adding claim tx for deposit %d. Error: %v", deposit.DepositCount, err)

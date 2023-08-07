@@ -42,7 +42,8 @@ const (
 type Client struct {
 	// Client ethclient
 	*ethclient.Client
-	bridge *polygonzkevmbridge.Polygonzkevmbridge
+	bridge       *polygonzkevmbridge.Polygonzkevmbridge
+	bridgeCaller *polygonzkevmbridge.PolygonzkevmbridgeCaller
 }
 
 // NewClient creates client.
@@ -52,12 +53,18 @@ func NewClient(ctx context.Context, nodeURL string, bridgeSCAddr common.Address)
 		return nil, err
 	}
 	var br *polygonzkevmbridge.Polygonzkevmbridge
+	var bridgeCaller *polygonzkevmbridge.PolygonzkevmbridgeCaller
 	if len(bridgeSCAddr) != 0 {
 		br, err = polygonzkevmbridge.NewPolygonzkevmbridge(bridgeSCAddr, client)
+		if err != nil {
+			return nil, err
+		}
+		bridgeCaller, err = polygonzkevmbridge.NewPolygonzkevmbridgeCaller(bridgeSCAddr, client)
 	}
 	return &Client{
-		Client: client,
-		bridge: br,
+		Client:       client,
+		bridge:       br,
+		bridgeCaller: bridgeCaller,
 	}, err
 }
 
@@ -218,6 +225,14 @@ func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, 
 	}
 
 	return tx, nil
+}
+
+func (c *Client) GetL1BridgeAddress(rollupId uint32) (common.Address, error) {
+	return c.bridgeCaller.GetL1BridgeAddress(&bind.CallOpts{}, rollupId)
+}
+
+func (c *Client) GetBridgeFee() (*big.Int, error) {
+	return c.bridgeCaller.BridgeFee(&bind.CallOpts{})
 }
 
 // SendClaim sends a claim transaction.
