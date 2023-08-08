@@ -481,8 +481,12 @@ func (tm *ClaimTxManager) monitorTxs(ctx context.Context) (int, error) {
 								mTxLog.Errorf("failed to get receipt block: %v", err)
 								continue
 							}
+							networkID := uint(1)
+							if mTx.IsL1 {
+								networkID = 0
+							}
 							mTx.BlockID, err = tm.storage.AddBlock(ctx, &etherman.Block{
-								NetworkID:   tm.networkID,
+								NetworkID:   networkID,
 								BlockNumber: block.Number().Uint64(),
 								BlockHash:   block.Hash(),
 								ParentHash:  block.ParentHash(),
