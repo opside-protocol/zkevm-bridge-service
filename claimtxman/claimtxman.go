@@ -61,7 +61,10 @@ func NewClaimTxManager(cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	l1Auth, err := l1Client.GetSignerFromKeystore(ctx, cfg.PrivateKeyL1)
-	l2Auth, err := l1Client.GetSignerFromKeystore(ctx, cfg.PrivateKeyL2)
+	if err != nil {
+		return nil, err
+	}
+	l2Auth, err := l2Client.GetSignerFromKeystore(ctx, cfg.PrivateKeyL2)
 	return &ClaimTxManager{
 		ctx:             ctx,
 		cancel:          cancel,
