@@ -125,6 +125,7 @@ message GetTokenWrappedRequest {
 message GetBridgeRequest {
     uint32 net_id = 1;
     uint64 deposit_cnt = 2;
+    string tx_hash = 3;
 }
 
 message GetClaimsRequest {

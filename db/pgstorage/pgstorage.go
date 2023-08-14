@@ -214,19 +214,27 @@ func (p *PostgresStorage) GetClaim(ctx context.Context, depositCount, networkID 
 }
 
 // GetDeposit gets a specific deposit from the storage.
-func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser uint, networkID uint, dbTx pgx.Tx) (*etherman.Deposit, error) {
+func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser uint, networkID uint, txHash string, dbTx pgx.Tx) (*etherman.Deposit, error) {
 	var (
 		deposit etherman.Deposit
 		amount  string
 	)
-	const getDepositSQL = "SELECT leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim, b.received_at FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND deposit_cnt = $2"
-	err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositSQL, networkID, depositCounterUser).Scan(&deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim, &deposit.Timestamp)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, gerror.ErrStorageNotFound
+	if len(txHash) > 0 {
+		const getDepositSQL = "SELECT leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim, b.received_at FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND tx_hash = $2"
+		err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositSQL, networkID, common.HexToHash(txHash)).Scan(&deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim, &deposit.Timestamp)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gerror.ErrStorageNotFound
+		}
+	} else {
+		const getDepositSQL = "SELECT leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim, b.received_at FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND deposit_cnt = $2"
+		err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositSQL, networkID, depositCounterUser).Scan(&deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim, &deposit.Timestamp)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gerror.ErrStorageNotFound
+		}
 	}
 	deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
 
-	return &deposit, err
+	return &deposit, nil
 }
 
 // GetLatestExitRoot gets the latest global exit root.
