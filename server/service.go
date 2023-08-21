@@ -126,7 +126,7 @@ func (s *bridgeService) GetClaimProof(depositCnt, networkID uint, dbTx pgx.Tx) (
 	ctx := context.Background()
 
 	if dbTx == nil { // if the call comes from the rest API
-		deposit, err := s.storage.GetDeposit(ctx, depositCnt, networkID, nil)
+		deposit, err := s.storage.GetDeposit(ctx, depositCnt, networkID, "", nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -293,12 +293,12 @@ func (s *bridgeService) GetProof(ctx context.Context, req *pb.GetProofRequest) (
 // GetBridge returns the bridge  with status whether it is able to send a claim transaction or not.
 // Bridge rest API endpoint
 func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest) (*pb.GetBridgeResponse, error) {
-	deposit, err := s.storage.GetDeposit(ctx, uint(req.DepositCnt), uint(req.NetId), nil)
+	deposit, err := s.storage.GetDeposit(ctx, uint(req.DepositCnt), uint(req.NetId), req.TxHash, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	claimTxHash, err := s.GetDepositStatus(ctx, uint(req.DepositCnt), deposit.DestinationNetwork)
+	claimTxHash, err := s.GetDepositStatus(ctx, deposit.DepositCount, deposit.DestinationNetwork)
 	if err != nil {
 		return nil, err
 	}

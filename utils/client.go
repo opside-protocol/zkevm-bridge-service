@@ -42,7 +42,8 @@ const (
 type Client struct {
 	// Client ethclient
 	*ethclient.Client
-	bridge *polygonzkevmbridge.Polygonzkevmbridge
+	bridge       *polygonzkevmbridge.Polygonzkevmbridge
+	bridgeCaller *polygonzkevmbridge.PolygonzkevmbridgeCaller
 }
 
 // NewClient creates client.
@@ -52,12 +53,18 @@ func NewClient(ctx context.Context, nodeURL string, bridgeSCAddr common.Address)
 		return nil, err
 	}
 	var br *polygonzkevmbridge.Polygonzkevmbridge
+	var bridgeCaller *polygonzkevmbridge.PolygonzkevmbridgeCaller
 	if len(bridgeSCAddr) != 0 {
 		br, err = polygonzkevmbridge.NewPolygonzkevmbridge(bridgeSCAddr, client)
+		if err != nil {
+			return nil, err
+		}
+		bridgeCaller, err = polygonzkevmbridge.NewPolygonzkevmbridgeCaller(bridgeSCAddr, client)
 	}
 	return &Client{
-		Client: client,
-		bridge: br,
+		Client:       client,
+		bridge:       br,
+		bridgeCaller: bridgeCaller,
 	}, err
 }
 
@@ -157,7 +164,7 @@ func (c *Client) MintERC20(ctx context.Context, erc20Addr common.Address, amount
 
 // SendBridgeAsset sends a bridge asset transaction.
 func (c *Client) SendBridgeAsset(ctx context.Context, tokenAddr common.Address, amount *big.Int, destNetwork uint32,
-	destAddr *common.Address, metadata []byte, auth *bind.TransactOpts,
+	destAddr *common.Address, auth *bind.TransactOpts,
 ) error {
 	emptyAddr := common.Address{}
 	if tokenAddr == emptyAddr {
@@ -166,7 +173,7 @@ func (c *Client) SendBridgeAsset(ctx context.Context, tokenAddr common.Address, 
 	if destAddr == nil {
 		destAddr = &auth.From
 	}
-	tx, err := c.bridge.BridgeAsset(auth, destNetwork, *destAddr, amount, tokenAddr, true, metadata)
+	tx, err := c.bridge.BridgeAsset(auth, destNetwork, *destAddr, amount, tokenAddr, true)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -218,6 +225,14 @@ func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, 
 	}
 
 	return tx, nil
+}
+
+func (c *Client) GetL1BridgeAddress(rollupId uint32) (common.Address, error) {
+	return c.bridgeCaller.GetL1BridgeAddress(&bind.CallOpts{}, rollupId)
+}
+
+func (c *Client) GetBridgeFee() (*big.Int, error) {
+	return c.bridgeCaller.BridgeFee(&bind.CallOpts{})
 }
 
 // SendClaim sends a claim transaction.

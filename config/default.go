@@ -18,7 +18,7 @@ MaxConns = 20
 [ClaimTxManager]
 Enabled = false
 FrequencyToMonitorTxs = "1s"
-PrivateKey = {Path = "./test/test.keystore", Password = "testonly"}
+PrivateKeyL2 = {Path = "./test/test.keystore", Password = "testonly"}
 
 [Etherman]
 L1URL = "http://localhost:8545"
